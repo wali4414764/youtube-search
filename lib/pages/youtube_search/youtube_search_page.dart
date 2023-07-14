@@ -17,7 +17,7 @@ class _YoutubeSearchPageState extends State<YoutubeSearchPage> {
   bool _isSearch = false;
   bool _isLoading=true;
   int navIndex = 0;
-  List <ItemData> items=[];
+  List <ItemData>? items=[];
   TextEditingController _controller=TextEditingController();
 
   String baseUrl="https://youtube.googleapis.com/youtube/v3/";
@@ -38,20 +38,22 @@ class _YoutubeSearchPageState extends State<YoutubeSearchPage> {
   }
 
   Future<void> _loadMockDataFromAssets()async{
-    String url= baseUrl+"search?part=snippet&maxResults=$MAXRESULT&q=${_controller.text}&videoType=any&key=$API_KEY";
+    dynamic url= baseUrl+"search?part=snippet&maxResults=$MAXRESULT&q=${_controller.text}&videoType=any&key=$API_KEY";
 
-    final encodeFul= Uri.encodeFull(url);
-    final response=await httpClient.get(encodeFul as Uri);
+    final uri = Uri.parse(url);
+    final response=await httpClient.get(uri);
     setState(() {
       _isLoading=false;
     });
 
 
-    if(response.statusCode==200){
-      final data=YoutubeSearchModel.fromjson(json.decode(response.body));
-      items=data.items;
 
-
+    if (response.statusCode == 200) {
+      final data = YoutubeSearchModel.fromJson(json.decode(response.body));
+      setState(() {
+        items = data.items;
+        _isLoading = false;
+      });
     }
 
 
@@ -185,10 +187,10 @@ class _YoutubeSearchPageState extends State<YoutubeSearchPage> {
         ],
       ),
       body:_isLoading==true?Center(child: CircularProgressIndicator(),): ListView.builder(
-          itemCount: items.length,
+          itemCount: items!.length,
           itemBuilder: (context, index) {
             return InkWell(onTap: (){
-                Navigator.pushNamed(context, "/playVideo",arguments: items[index]);
+                Navigator.pushNamed(context, "/playVideo",arguments: items![index]);
             },
               child: Container(
                 height: 280,
@@ -196,17 +198,20 @@ class _YoutubeSearchPageState extends State<YoutubeSearchPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Container(
-                        height: 200,
-                        width: double.infinity,
-                        color: Colors.grey,
-                        child: Image.network(items[index].snippet?.thumbnails?.medium?.url as String,fit: BoxFit.cover,),
+                      Expanded(
+                        flex: 1,
+                        child: Container(
+                          height: 200,
+                          width: double.infinity,
+                          color: Colors.grey,
+                          child: Image.network(items![index].snippet?.thumbnails?.medium?.url as String,fit: BoxFit.cover,),
+                        ),
                       ),
                       SizedBox(
                         height: 8,
                       ),
                       Text(
-                        "${items[index].snippet?.title}",
+                        "${items![index].snippet?.title}",
                         maxLines: 2,
                         style: TextStyle(
                           fontSize: 16,
@@ -217,7 +222,7 @@ class _YoutubeSearchPageState extends State<YoutubeSearchPage> {
                         height: 4,
                       ),
                       Text(
-                        "${items[index].snippet?.channelTitle}",
+                        "${items![index].snippet?.channelTitle}",
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w400,
