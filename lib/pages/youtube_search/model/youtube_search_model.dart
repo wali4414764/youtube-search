@@ -32,4 +32,8 @@ class YoutubeSearchModel {
       items: itemData,
     );
   }
+
+  static fromjson(decode) {}
+
+  
 }

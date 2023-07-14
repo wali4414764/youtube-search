@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'dart:ui';
-
+import 'package:http/http.dart'as http;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -18,6 +18,18 @@ class _YoutubeSearchPageState extends State<YoutubeSearchPage> {
   bool _isLoading=true;
   int navIndex = 0;
   List <ItemData> items=[];
+  TextEditingController _controller=TextEditingController();
+
+  String baseUrl="https://youtube.googleapis.com/youtube/v3/";
+  String API_KEY="AIzaSyBjGloNHkJq0fXNS9gCa-kQJhZWjffaMUY";
+  static const MAXRESULT="10";
+  final httpClient=http.Client();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
   @override
   void initState(){
     super.initState();
@@ -26,21 +38,33 @@ class _YoutubeSearchPageState extends State<YoutubeSearchPage> {
   }
 
   Future<void> _loadMockDataFromAssets()async{
+    String url= baseUrl+"search?part=snippet&maxResults=$MAXRESULT&q=${_controller.text}&videoType=any&key=$API_KEY";
 
-    Future.delayed(Duration(seconds: 3),(){
-      setState(() {
-        _isLoading=false;
-      });
+    final encodeFul= Uri.encodeFull(url);
+    final response=await httpClient.get(encodeFul as Uri);
+    setState(() {
+      _isLoading=false;
     });
 
-    final assetsData=await rootBundle.loadString("assets/images/youtube_search.json");
 
-    final response=YoutubeSearchModel.fromJson(json.decode(assetsData));
+    if(response.statusCode==200){
+      final data=YoutubeSearchModel.fromjson(json.decode(response.body));
+      items=data.items;
 
 
-    items=response.items!;
+    }
 
-    print(response.items?[0].snippet?.thumbnails?.high?.width);
+
+
+
+    //final assetsData=await rootBundle.loadString("assets/images/youtube_search.json");
+
+   // final response=YoutubeSearchModel.fromJson(json.decode(assetsData));
+
+
+
+
+    //print(response.items?[0].snippet?.thumbnails?.high?.width);
 
 
   }
@@ -70,8 +94,13 @@ class _YoutubeSearchPageState extends State<YoutubeSearchPage> {
                 color: Colors.black.withOpacity(.2),
               ),
               child: TextField(
+                controller: _controller,
                 style: TextStyle(color: Colors.white),
                 decoration: InputDecoration(
+                  suffixIcon: InkWell(onTap: (){
+                    _loadMockDataFromAssets();
+
+                  },child: Icon(Icons.search)),
                     hintText: "Youtube Search", border: InputBorder.none),
               )),
         ),
